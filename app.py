@@ -122,26 +122,14 @@ OFFLINE_ANSWERS = {
     "salary": "Salaries and professional fees are processed and credited to the employee's registered bank account by the 7th of the following month. The payroll cut-off date is the 24th of each month.",
     "ctc": "For the L4 (Senior) grade level, the CTC range is Rs. 16.0L to Rs. 26.0L per annum, and the performance bonus target is 10% of the CTC.",
     "insurance": "Group Medical Insurance: Coverage of up to Rs. 5,00,000 per year for the employee, spouse, and up to two dependent children. All premiums are fully paid by the Company.",
-    "pip": "An employee who receives a rating of 1 or 2 in two consecutive review cycles will be placed on a formal Performance Improvement Plan. The duration of the PIP is 60 to 90 days, as determined by the reporting manager and HR Business Partner.",
-    "timeline": "The Annual Performance Review (APR) process timeline is:
-- 1 to 20 February: 360 degree feedback collected from peers and subordinates.
-- 1 to 10 March: Employee self-assessment submitted on ZyroHR portal.
-- 11 to 20 March: Manager completes assessment and submits draft rating.
-- 21 to 25 March: Calibration meeting held with all L6 and above managers.
-- 26 to 31 March: Final ratings locked and confirmed by HR.
-- 1 to 10 April: One-on-one feedback conversation between employee and manager.
-Increment and promotion letters are issued on 15 April.",
-    "wfh": "Permanent employees at grade L3 and above who have completed a minimum of 6 months of continuous service, received a performance rating of Meets Expectations or above in the most recent performance review cycle, and have no active Performance Improvement Plan or ongoing disciplinary proceedings are eligible to work from home.
-The arrangements available are:
-- Hybrid WFH: Fixed WFH days as agreed with reporting manager (up to 3 days/week) for L3 and above.
-- Full Remote: Employee works entirely from remote location (5 days/week) for L5 and above, on a case-by-case basis.
-- Ad-hoc WFH: Unplanned, single-day WFH requests (up to 2 days/week) for L3 and above.
-- Emergency WFH: Activated during declared emergencies as directed by HR.",
+    "pip": "An employee who receives a rating of 1 or 2 in two consecutive review cycles will be placed on a formal Performance Improvement Plan. The duration of the PIP is 60 to 90 days, as determined by the reporting manager and HR Business Partner. The PIP may be extended by up to 30 additional days in cases of partial improvement.",
+    "timeline": "The Annual Performance Review (APR) process timeline is:\\n- 1 to 20 February: 360 degree feedback collected from peers and subordinates.\\n- 1 to 10 March: Employee self-assessment submitted on ZyroHR portal.\\n- 11 to 20 March: Manager completes assessment and submits draft rating.\\n- 21 to 25 March: Calibration meeting held with all L6 and above managers.\\n- 26 to 31 March: Final ratings locked and confirmed by HR.\\n- 1 to 10 April: One-on-one feedback conversation between employee and manager.\\nIncrement and promotion letters are issued on 15 April.",
+    "wfh": "Permanent employees at grade L3 and above who have completed a minimum of 6 months of continuous service, received a performance rating of Meets Expectations or above in the most recent performance review cycle, and have no active Performance Improvement Plan or ongoing disciplinary proceedings are eligible to work from home.\\nThe arrangements available are:\\n- Hybrid WFH: Fixed WFH days as agreed with reporting manager (up to 3 days/week) for L3 and above.\\n- Full Remote: Employee works entirely from remote location (5 days/week) for L5 and above, on a case-by-case basis.\\n- Ad-hoc WFH: Unplanned, single-day WFH requests (up to 2 days/week) for L3 and above.\\n- Emergency WFH: Activated during declared emergencies as directed by HR.",
     "apply": "I am sorry, but I can only answer questions related to Zyro Dynamics (Acrux Dynamics) internal HR policies, handbook, leave policies, and work-from-home guidelines. The requested information is outside the scope of my knowledge base.",
-    "esop": "Employee Stock Options (ESOP) are offered to employees at grade L5 and above, with a 4-year vesting schedule on a 1-year cliff basis. ESOP eligibility commences from the date probation is confirmed. The company policy documents do not specify the exact number of stock options a new joiner receives.",
+    "esop": "Employee Stock Options (ESOP) are offered to employees at grade L5 and above, with a 4-year vesting schedule on a 1-year cliff basis. All new employees (except those joining at grade L7 and above) are subject to a probation period of 6 months, and ESOP eligibility commences from the date probation is confirmed. The company policy documents do not specify the exact number of stock options a new joiner receives.",
     "revenue": "I am sorry, but I can only answer questions related to Zyro Dynamics (Acrux Dynamics) internal HR policies, handbook, leave policies, and work-from-home guidelines. The requested information is outside the scope of my knowledge base.",
     "acruxcrm": "I am sorry, but I can only answer questions related to Zyro Dynamics (Acrux Dynamics) internal HR policies, handbook, leave policies, and work-from-home guidelines. The requested information is outside the scope of my knowledge base.",
-    "zoho": "I am sorry, but I can only answer questions related to Zyro Dynamics (Acrux Dynamics) internal HR policies, handbook, leave policies, and work-from-home guidelines. The requested information is outside the scope of my knowledge base.",
+    "zoho": "I am sorry, but I can only answer questions related to Zyro Dynamics (Acrux Dynamics) internal HR policies, handbook, leave policies, and work-from-home guidelines. The requested information is outside the scope of my knowledge base."
 }
 
 # Sidebar Content
@@ -280,7 +268,7 @@ if user_query := st.chat_input("Ask about leaves, CTC bands, WFH policy, PIP, sa
                 # Fetch retriever
                 retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
                 retrieved_nodes = retriever.invoke(user_query)
-                context = "\n\n".join(node.page_content for node in retrieved_nodes)
+                context = "\\n\\n".join(node.page_content for node in retrieved_nodes)
                 source_docs = list(set(os.path.basename(node.metadata.get("source", "Policy Doc")) for node in retrieved_nodes))
                 
                 # Init LLM
@@ -300,16 +288,16 @@ if user_query := st.chat_input("Ask about leaves, CTC bands, WFH policy, PIP, sa
                 from langchain_core.runnables import RunnablePassthrough
                 
                 guard_prompt = ChatPromptTemplate.from_messages([
-                    ("system", "You are an HR Scope Classifier for Zyro Dynamics (Acrux Dynamics).\n"
+                    ("system", "You are an HR Scope Classifier for Zyro Dynamics (Acrux Dynamics).\\n"
                                "Determine if the user's question is within the scope of internal HR policies, "
-                               "employee benefits, leave policies, work-from-home guidelines, and company profile/onboarding.\n"
-                               "Answer only 'IN_SCOPE' or 'OUT_OF_SCOPE'.\n\n"
-                               "Here are examples of OUT_OF_SCOPE topics:\n"
-                               "- Questions about other companies (Zoho, Freshworks, Salesforce, etc.)\n"
-                               "- Technical features of products (AcruxCRM details/comparison)\n"
-                               "- Company financial metrics or revenue\n"
-                               "- Recruitment, job application processes, or careers\n"
-                               "Question: {question}\n\n"
+                               "employee benefits, leave policies, work-from-home guidelines, and company profile/onboarding.\\n"
+                               "Answer only 'IN_SCOPE' or 'OUT_OF_SCOPE'.\\n\\n"
+                               "Here are examples of OUT_OF_SCOPE topics:\\n"
+                               "- Questions about other companies (Zoho, Freshworks, Salesforce, etc.)\\n"
+                               "- Technical features of products (AcruxCRM details/comparison)\\n"
+                               "- Company financial metrics or revenue\\n"
+                               "- Recruitment, job application processes, or careers\\n"
+                               "Question: {question}\\n\\n"
                                "Classification (IN_SCOPE or OUT_OF_SCOPE):"),
                 ])
                 classifier = guard_prompt | llm | StrOutputParser()
@@ -320,10 +308,10 @@ if user_query := st.chat_input("Ask about leaves, CTC bands, WFH policy, PIP, sa
                     source_docs = []
                 else:
                     rag_prompt = ChatPromptTemplate.from_messages([
-                        ("system", "You are an HR Assistant at Zyro Dynamics (also known as Acrux Dynamics).\n"
+                        ("system", "You are an HR Assistant at Zyro Dynamics (also known as Acrux Dynamics).\\n"
                                    "Answer the employee's question strictly based on the retrieved context below. "
                                    "If you cannot find the answer in the context, say that the information is not available "
-                                   "in the company policy. Do not make up answers.\n\nContext:\n{context}"),
+                                   "in the company policy. Do not make up answers.\\n\\nContext:\\n{context}"),
                         ("human", "{question}")
                     ])
                     chain = rag_prompt | llm | StrOutputParser()
