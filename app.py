@@ -18,145 +18,315 @@ st.set_page_config(
 st.markdown("""
 <style>
     /* Google Fonts import */
-    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+    
+    /* Global Variables and Dark System Tokens */
+    :root {
+        --font-body: 'Plus Jakarta Sans', sans-serif;
+        --font-heading: 'Outfit', sans-serif;
+        --font-mono: 'JetBrains Mono', monospace;
+        
+        --bg-gradient: linear-gradient(135deg, #070913 0%, #0c0f1d 50%, #060812 100%);
+        --card-bg: rgba(13, 20, 38, 0.45);
+        --card-border: rgba(51, 65, 85, 0.35);
+        
+        --text-main: #f8fafc;
+        --text-muted: #94a3b8;
+        
+        --accent-primary: #6366f1; /* Indigo */
+        --accent-secondary: #a855f7; /* Purple */
+        --accent-gradient: linear-gradient(90deg, #6366f1 0%, #a855f7 100%);
+        --accent-glow: 0 0 24px rgba(99, 102, 241, 0.15);
+        
+        --user-bubble: rgba(30, 41, 59, 0.7);
+        --assistant-bubble: rgba(15, 23, 42, 0.85);
+    }
     
     /* Apply styles globally */
     html, body, [class*="css"] {
-        font-family: 'Plus Jakarta Sans', sans-serif;
+        font-family: var(--font-body);
     }
     h1, h2, h3, h4, h5, h6 {
-        font-family: 'Outfit', sans-serif;
+        font-family: var(--font-heading);
         font-weight: 600;
     }
     
-    /* Main app container dark background styling */
+    /* Main app container background */
     .stApp {
-        background: linear-gradient(135deg, #0d1117 0%, #161b22 100%);
-        color: #c9d1d9;
+        background: var(--bg-gradient);
+        color: var(--text-main);
     }
     
-    /* Header styling with gradient */
+    /* Header container styling */
     .header-container {
-        padding: 1.5rem 0rem;
-        margin-bottom: 1rem;
-        border-bottom: 1px solid #21262d;
+        padding: 2rem;
+        background: rgba(13, 20, 38, 0.45);
+        border: 1px solid var(--card-border);
+        border-radius: 18px;
+        margin-bottom: 2rem;
+        backdrop-filter: blur(12px);
+        box-shadow: var(--accent-glow);
+        border-left: 5px solid var(--accent-primary);
     }
+    
+    .brand-logo {
+        background: var(--accent-gradient);
+        color: #ffffff;
+        font-family: var(--font-heading);
+        font-size: 1.6rem;
+        font-weight: 800;
+        width: 54px;
+        height: 54px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 14px;
+        box-shadow: 0 0 20px rgba(99, 102, 241, 0.35);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        letter-spacing: -0.04rem;
+    }
+
     .header-title {
-        background: linear-gradient(90deg, #58a6ff 0%, #bc8cff 100%);
+        background: var(--accent-gradient);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        font-family: var(--font-heading);
         font-size: 2.8rem !important;
-        font-weight: 700 !important;
-        margin-bottom: 0.1rem;
-        letter-spacing: -0.05rem;
+        font-weight: 800 !important;
+        letter-spacing: -0.04rem;
+        margin-bottom: 0.2rem;
+        line-height: 1.2;
     }
     .header-subtitle {
-        color: #8b949e;
-        font-size: 1.05rem;
-        font-weight: 300;
+        color: var(--text-muted);
+        font-size: 1.1rem;
+        font-weight: 400;
         margin: 0;
     }
     
-    /* Sidebar premium dark style */
+    /* Sidebar styling */
     section[data-testid="stSidebar"] {
-        background-color: #0b0e14 !important;
-        border-right: 1px solid #21262d;
+        background-color: #04060d !important;
+        border-right: 1px solid rgba(51, 65, 85, 0.25);
     }
     
-    /* Glassmorphic cards */
+    /* Glassmorphic cards with transition effects */
     .glass-card {
-        background: rgba(22, 27, 34, 0.6);
-        border: 1px solid rgba(48, 54, 61, 0.8);
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        backdrop-filter: blur(10px);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        background: var(--card-bg);
+        border: 1px solid var(--card-border);
+        border-radius: 18px;
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+        backdrop-filter: blur(16px);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .glass-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(99, 102, 241, 0.45);
+        box-shadow: 0 15px 35px rgba(99, 102, 241, 0.12);
     }
     
     /* Custom Chat Bubbles */
     .chat-bubble {
-        padding: 1rem 1.25rem;
-        border-radius: 14px;
-        margin-bottom: 1rem;
-        line-height: 1.5;
-        font-size: 0.95rem;
+        padding: 1.2rem 1.5rem;
+        border-radius: 18px;
+        margin-bottom: 1.5rem;
+        line-height: 1.6;
+        font-size: 0.98rem;
         position: relative;
-        backdrop-filter: blur(5px);
-        animation: fadeIn 0.3s ease-out;
+        backdrop-filter: blur(8px);
+        animation: fadeIn 0.35s ease-out;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        white-space: pre-wrap;
     }
     @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
+        from { opacity: 0; transform: translateY(12px); }
         to { opacity: 1; transform: translateY(0); }
     }
     .chat-user {
-        background: rgba(31, 111, 235, 0.15);
-        border: 1px solid rgba(31, 111, 235, 0.35);
-        color: #c9d1d9;
-        margin-left: 20%;
-        border-top-right-radius: 2px;
+        background: var(--user-bubble);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #f1f5f9;
+        margin-left: auto;
+        margin-right: 0;
+        max-width: 80%;
+        width: fit-content;
+        border-top-right-radius: 4px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.25);
     }
     .chat-assistant {
-        background: rgba(188, 140, 255, 0.1);
-        border: 1px solid rgba(188, 140, 255, 0.25);
-        color: #c9d1d9;
-        margin-right: 20%;
-        border-top-left-radius: 2px;
+        background: var(--assistant-bubble);
+        border: 1px solid rgba(99, 102, 241, 0.22);
+        color: #f1f5f9;
+        margin-right: auto;
+        margin-left: 0;
+        max-width: 80%;
+        width: fit-content;
+        border-top-left-radius: 4px;
+        box-shadow: var(--accent-glow);
     }
     .avatar-label {
-        font-size: 0.75rem;
+        font-family: var(--font-heading);
+        font-size: 0.78rem;
         text-transform: uppercase;
-        letter-spacing: 0.05rem;
-        margin-bottom: 0.3rem;
+        letter-spacing: 0.08em;
+        margin-bottom: 0.4rem;
         font-weight: 700;
         display: flex;
         align-items: center;
-        gap: 0.3rem;
+        gap: 0.4rem;
     }
     .avatar-user {
-        color: #58a6ff;
+        color: #60a5fa;
     }
     .avatar-assistant {
-        color: #bc8cff;
+        color: #c084fc;
     }
     
     /* Source doc pill styling */
     .doc-pill {
-        display: inline-block;
-        background: rgba(56, 139, 253, 0.12);
-        color: #58a6ff;
-        border: 1px solid rgba(56, 139, 253, 0.25);
-        border-radius: 20px;
-        padding: 0.2rem 0.6rem;
+        display: inline-flex;
+        align-items: center;
+        background: rgba(99, 102, 241, 0.08);
+        color: #a5b4fc;
+        border: 1px solid rgba(99, 102, 241, 0.22);
+        border-radius: 30px;
+        padding: 0.3rem 0.8rem;
         font-size: 0.8rem;
-        margin-right: 0.5rem;
-        margin-bottom: 0.5rem;
-        font-weight: 500;
+        margin-right: 0.6rem;
+        margin-bottom: 0.6rem;
+        font-weight: 600;
         transition: all 0.2s ease;
     }
     .doc-pill:hover {
-        background: rgba(56, 139, 253, 0.2);
-        border-color: #58a6ff;
+        background: rgba(99, 102, 241, 0.18);
+        border-color: #818cf8;
+        transform: translateY(-1px);
     }
     
-    /* Metrics panel */
+    /* Metrics panel boxes */
     .metric-box {
         text-align: center;
-        padding: 1rem;
-        background: rgba(22, 27, 34, 0.4);
-        border: 1px solid #30363d;
-        border-radius: 8px;
+        padding: 1.5rem;
+        background: rgba(13, 20, 38, 0.3);
+        border: 1px solid var(--card-border);
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+    .metric-box:hover {
+        border-color: var(--accent-primary);
+        box-shadow: var(--accent-glow);
     }
     .metric-value {
-        font-size: 1.8rem;
-        font-weight: 700;
-        color: #58a6ff;
-        font-family: 'Outfit', sans-serif;
+        font-family: var(--font-heading);
+        font-size: 2.2rem;
+        font-weight: 800;
+        background: var(--accent-gradient);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
     }
     .metric-label {
-        font-size: 0.85rem;
-        color: #8b949e;
-        margin-top: 0.2rem;
+        font-size: 0.88rem;
+        color: var(--text-muted);
+        margin-top: 0.4rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    
+    /* Custom Scrollbar for Streamlit App */
+    ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.1);
+    }
+    ::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.08);
+        border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.18);
+    }
+
+    /* Style Streamlit Tabs */
+    div[data-baseweb="tab-list"] {
+        background: rgba(13, 20, 38, 0.6) !important;
+        border-radius: 12px !important;
+        padding: 0.4rem !important;
+        border: 1px solid var(--card-border) !important;
+        margin-bottom: 2rem !important;
+    }
+    div[data-baseweb="tab-list"] button {
+        font-family: var(--font-heading) !important;
+        font-size: 1rem !important;
+        font-weight: 600 !important;
+        color: var(--text-muted) !important;
+        border-radius: 8px !important;
+        padding: 0.6rem 1.2rem !important;
+        transition: all 0.3s ease !important;
+        background-color: transparent !important;
+        border: none !important;
+    }
+    div[data-baseweb="tab-list"] button[aria-selected="true"] {
+        color: #ffffff !important;
+        background: var(--accent-gradient) !important;
+        box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3) !important;
+    }
+
+    /* Style Streamlit inputs and widgets */
+    .stTextInput > div > div > input, .stSelectbox > div > div > div, .stNumberInput > div > div > input {
+        background-color: rgba(15, 23, 42, 0.6) !important;
+        color: var(--text-main) !important;
+        border: 1px solid var(--card-border) !important;
+        border-radius: 8px !important;
+        font-family: var(--font-body) !important;
+    }
+    .stTextInput > div > div > input:focus, .stSelectbox > div > div > div:focus, .stNumberInput > div > div > input:focus {
+        border-color: var(--accent-primary) !important;
+        box-shadow: 0 0 10px rgba(99, 102, 241, 0.3) !important;
+    }
+
+    /* Input labels */
+    label {
+        font-family: var(--font-heading) !important;
+        font-weight: 500 !important;
+        color: var(--text-muted) !important;
+        letter-spacing: 0.02em !important;
+    }
+
+    /* Custom Expander styling */
+    .streamlit-expanderHeader {
+        background-color: rgba(13, 20, 38, 0.4) !important;
+        border: 1px solid var(--card-border) !important;
+        border-radius: 8px !important;
+        font-family: var(--font-heading) !important;
+        color: var(--text-main) !important;
+        margin-bottom: 0.5rem !important;
+        transition: all 0.3s ease !important;
+    }
+    .streamlit-expanderHeader:hover {
+        background-color: rgba(99, 102, 241, 0.08) !important;
+        border-color: var(--accent-primary) !important;
+    }
+    .streamlit-expanderContent {
+        background-color: rgba(13, 20, 38, 0.2) !important;
+        border: 1px solid var(--card-border) !important;
+        border-top: none !important;
+        border-bottom-left-radius: 8px !important;
+        border-bottom-right-radius: 8px !important;
+        padding: 1.2rem !important;
+        color: var(--text-muted) !important;
+    }
+
+    /* Custom Alert/Notification boxes */
+    div[data-testid="stNotification"] {
+        background-color: rgba(13, 20, 38, 0.6) !important;
+        border: 1px solid var(--card-border) !important;
+        border-radius: 12px !important;
+        color: var(--text-main) !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -198,8 +368,13 @@ st.sidebar.markdown("---")
 # Main Content Header
 st.markdown("""
 <div class="header-container">
-    <h1 class="header-title">Zyro Dynamics</h1>
-    <p class="header-subtitle">Interactive HR Policy Portal & AI Assistant</p>
+    <div style="display: flex; align-items: center; gap: 1.2rem;">
+        <div class="brand-logo">ZD</div>
+        <div>
+            <h1 class="header-title">Zyro Dynamics</h1>
+            <p class="header-subtitle">Interactive HR Policy Portal & AI Assistant</p>
+        </div>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -299,7 +474,7 @@ with tabs[0]:
             
             # Deterministic Refusal for Out-of-Scope Keywords and specific Q12-like queries
             oos_keywords = ["zoho", "freshworks", "salesforce", "acruxcrm", "revenue last year", "financial performance", "apply for a job", "recruitment and hiring", "careers"]
-            is_oos_esop = ("esop" in q_norm or "stock option" in q_norm) and                            ("how many" in q_norm or "will i receive" in q_norm or "joiner" in q_norm)
+            is_oos_esop = ("esop" in q_norm or "stock option" in q_norm) and ("how many" in q_norm or "will i receive" in q_norm or "joiner" in q_norm)
             
             if any(kw in q_norm for kw in oos_keywords) or is_oos_esop:
                 answer = "I am sorry, but I can only answer questions related to Zyro Dynamics (Acrux Dynamics) internal HR policies, handbook, leave policies, and work-from-home guidelines. The requested information is outside the scope of my knowledge base."
@@ -445,10 +620,10 @@ with tabs[1]:
         <div class="glass-card">
             <h4 style="color:#58a6ff; margin-top:0;">Grade Details: {selected_grade}</h4>
             <table style="width:100%; border-collapse: collapse; margin-top:1rem;">
-                <tr style="border-bottom: 1px solid #30363d;"><td style="padding: 8px 0; font-weight:600; color:#8b949e;">Typical Designation</td><td style="padding: 8px 0; color:#c9d1d9;">{info['designation']}</td></tr>
-                <tr style="border-bottom: 1px solid #30363d;"><td style="padding: 8px 0; font-weight:600; color:#8b949e;">Experience Range</td><td style="padding: 8px 0; color:#c9d1d9;">{info['experience']}</td></tr>
-                <tr style="border-bottom: 1px solid #30363d;"><td style="padding: 8px 0; font-weight:600; color:#8b949e;">CTC Range (INR/annum)</td><td style="padding: 8px 0; color:#58a6ff; font-weight:600;">{info['ctc']}</td></tr>
-                <tr><td style="padding: 8px 0; font-weight:600; color:#8b949e;">Performance Bonus Target</td><td style="padding: 8px 0; color:#bc8cff; font-weight:600;">{info['bonus']}</td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);"><td style="padding: 10px 0; font-weight:600; color:var(--text-muted);">Typical Designation</td><td style="padding: 10px 0; color:var(--text-main); font-weight:500;">{info['designation']}</td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);"><td style="padding: 10px 0; font-weight:600; color:var(--text-muted);">Experience Range</td><td style="padding: 10px 0; color:var(--text-main); font-weight:500;">{info['experience']}</td></tr>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.06);"><td style="padding: 10px 0; font-weight:600; color:var(--text-muted);">CTC Range (INR/annum)</td><td style="padding: 10px 0; color:#60a5fa; font-weight:600;">{info['ctc']}</td></tr>
+                <tr><td style="padding: 10px 0; font-weight:600; color:var(--text-muted);">Performance Bonus Target</td><td style="padding: 10px 0; color:#c084fc; font-weight:600;">{info['bonus']}</td></tr>
             </table>
         </div>
         """, unsafe_allow_html=True)
