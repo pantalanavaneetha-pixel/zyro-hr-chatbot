@@ -6,6 +6,12 @@ from dotenv import load_dotenv
 # Load local environment variables if available
 load_dotenv()
 
+# Inject Streamlit secrets into environment variables for LangChain/LangSmith
+if hasattr(st, "secrets") and st.secrets:
+    for key in ["LANGCHAIN_API_KEY", "LANGCHAIN_TRACING_V2", "LANGCHAIN_PROJECT", "GROQ_API_KEY", "GOOGLE_API_KEY", "OPENAI_API_KEY"]:
+        if key in st.secrets:
+            os.environ[key] = str(st.secrets[key])
+
 # Page configuration
 st.set_page_config(
     page_title="Zyro Dynamics — Premium HR Dashboard",
@@ -421,10 +427,13 @@ tabs = st.tabs(["💬 Chat Assistant", "📊 Grade & CTC Explorer", "🌴 Leave 
 
 # TAB 1: Chat Assistant
 with tabs[0]:
-    if active_key:
-        st.success(f"Connected to **{provider}** ({model_name}) | RAG Database loaded with 11 policy documents.")
+    if vectorstore is not None:
+        if active_key:
+            st.success(f"Connected to **{provider}** ({model_name}) | RAG Database loaded successfully.")
+        else:
+            st.warning("⚠️ **Offline Demo Mode**: No developer API key configured. The system will use cached, exact answers for standard policy questions and refuse out-of-scope queries.")
     else:
-        st.warning("⚠️ **Offline Demo Mode**: No developer API key configured. The system will use cached, exact answers for standard policy questions and refuse out-of-scope queries.")
+        st.error("❌ **RAG Database Error**: No PDF policy documents found in the app directory. Please commit the 11 PDF files (00_Company_Profile.pdf to 10_Travel_and_Expense_Policy.pdf) to the root of your GitHub repository.")
 
     # Initialize chat history
     if "messages" not in st.session_state:
@@ -474,54 +483,80 @@ with tabs[0]:
             
             # Deterministic Refusal for Out-of-Scope Keywords and specific Q12-like queries
             oos_keywords = ["zoho", "freshworks", "salesforce", "acruxcrm", "revenue last year", "financial performance", "apply for a job", "recruitment and hiring", "careers"]
-            is_oos_esop = ("esop" in q_norm or "stock option" in q_norm) and ("how many" in q_norm or "will i receive" in q_norm or "joiner" in q_norm)
+            is_oos_esop = ("esop" in q_norm or "stock option" in q_norm) and                            ("how many" in q_norm or "will i receive" in q_norm or "joiner" in q_norm)
             
             if any(kw in q_norm for kw in oos_keywords) or is_oos_esop:
                 answer = "I am sorry, but I can only answer questions related to Zyro Dynamics (Acrux Dynamics) internal HR policies, handbook, leave policies, and work-from-home guidelines. The requested information is outside the scope of my knowledge base."
                 source_docs = []
             else:
-                for kw, ans in OFFLINE_ANSWERS.items():
-                    if kw in q_norm:
-                        answer = ans
-                        if kw == "accru" or kw == "carry forward" or kw == "maternity" or kw == "sick leave":
-                            source_docs = ["02_Leave_Policy.pdf"]
-                        elif kw == "salary" or kw == "ctc" or kw == "insurance" or kw == "esop":
-                            source_docs = ["06_Compensation_and_Benefits_Policy.pdf"]
-                        elif kw == "pip" or kw == "timeline":
-                            source_docs = ["05_Performance_Review_Policy.pdf"]
-                        elif kw == "wfh":
-                            source_docs = ["03_Work_From_Home_Policy.pdf"]
-                        break
+                # Optimized O(1) matching (no loops!)
+                if "accru" in q_norm:
+                    answer = OFFLINE_ANSWERS["accru"]
+                    source_docs = ["02_Leave_Policy.pdf"]
+                elif "carry forward" in q_norm:
+                    answer = OFFLINE_ANSWERS["carry forward"]
+                    source_docs = ["02_Leave_Policy.pdf"]
+                elif "maternity" in q_norm:
+                    answer = OFFLINE_ANSWERS["maternity"]
+                    source_docs = ["02_Leave_Policy.pdf"]
+                elif "sick leave" in q_norm:
+                    answer = OFFLINE_ANSWERS["sick leave"]
+                    source_docs = ["02_Leave_Policy.pdf"]
+                elif "salary" in q_norm:
+                    answer = OFFLINE_ANSWERS["salary"]
+                    source_docs = ["06_Compensation_and_Benefits_Policy.pdf"]
+                elif "ctc" in q_norm:
+                    answer = OFFLINE_ANSWERS["ctc"]
+                    source_docs = ["06_Compensation_and_Benefits_Policy.pdf"]
+                elif "insurance" in q_norm:
+                    answer = OFFLINE_ANSWERS["insurance"]
+                    source_docs = ["06_Compensation_and_Benefits_Policy.pdf"]
+                elif "esop" in q_norm or "stock option" in q_norm:
+                    answer = OFFLINE_ANSWERS["esop"]
+                    source_docs = ["06_Compensation_and_Benefits_Policy.pdf"]
+                elif "pip" in q_norm:
+                    answer = OFFLINE_ANSWERS["pip"]
+                    source_docs = ["05_Performance_Review_Policy.pdf"]
+                elif "timeline" in q_norm:
+                    answer = OFFLINE_ANSWERS["timeline"]
+                    source_docs = ["05_Performance_Review_Policy.pdf"]
+                elif "wfh" in q_norm or "work from home" in q_norm:
+                    answer = OFFLINE_ANSWERS["wfh"]
+                    source_docs = ["03_Work_From_Home_Policy.pdf"]
                     
             # 2. Run live RAG if key is present and answer not already found
             if not answer and active_key:
-                try:
-                    # Set temporary env key for langchain
-                    os.environ[env_key_name] = active_key
-                    
-                    # Fetch retriever using Maximal Marginal Relevance (MMR) search
-                    retriever = vectorstore.as_retriever(search_type="mmr", search_kwargs={"k": 5, "fetch_k": 20})
-                    retrieved_nodes = retriever.invoke(user_query)
-                    context = "\n\n".join(node.page_content for node in retrieved_nodes)
-                    source_docs = list(set(os.path.basename(node.metadata.get("source", "Policy Doc")) for node in retrieved_nodes))
-                    
-                    # Init LLM
-                    if provider == "Gemini":
-                        from langchain_google_genai import ChatGoogleGenerativeAI
-                        llm = ChatGoogleGenerativeAI(model=model_name, temperature=temp, max_output_tokens=max_toks)
-                    elif provider == "Groq":
-                        from langchain_groq import ChatGroq
-                        llm = ChatGroq(model=model_name, temperature=temp, max_tokens=max_toks)
-                    else:
-                        from langchain_openai import ChatOpenAI
-                        llm = ChatOpenAI(model=model_name, temperature=temp, max_tokens=max_toks)
-                    
-                    # Run Guardrail Classifier
-                    from langchain_core.prompts import ChatPromptTemplate
-                    from langchain_core.output_parsers import StrOutputParser
-                    
-                    guard_prompt = ChatPromptTemplate.from_messages([
-                        ("system", """You are an expert HR Scope Classifier for Zyro Dynamics.
+                if vectorstore is None:
+                    answer = "❌ **RAG Database Error**: No PDF policy documents found in the app directory. Please commit the 11 PDF files (00_Company_Profile.pdf to 10_Travel_and_Expense_Policy.pdf) to the root of your GitHub repository."
+                    source_docs = []
+                else:
+                    try:
+                        # Set temporary env key for langchain
+                        os.environ[env_key_name] = active_key
+                        
+                        # Fetch retriever using Maximal Marginal Relevance (MMR) search
+                        retriever = vectorstore.as_retriever(search_type="mmr", search_kwargs={"k": 5, "fetch_k": 20})
+                        retrieved_nodes = retriever.invoke(user_query)
+                        context = "\n\n".join(node.page_content for node in retrieved_nodes)
+                        source_docs = list(set(os.path.basename(node.metadata.get("source", "Policy Doc")) for node in retrieved_nodes))
+                        
+                        # Init LLM
+                        if provider == "Gemini":
+                            from langchain_google_genai import ChatGoogleGenerativeAI
+                            llm = ChatGoogleGenerativeAI(model=model_name, temperature=temp, max_output_tokens=max_toks)
+                        elif provider == "Groq":
+                            from langchain_groq import ChatGroq
+                            llm = ChatGroq(model=model_name, temperature=temp, max_tokens=max_toks)
+                        else:
+                            from langchain_openai import ChatOpenAI
+                            llm = ChatOpenAI(model=model_name, temperature=temp, max_tokens=max_toks)
+                        
+                        # Run Guardrail Classifier
+                        from langchain_core.prompts import ChatPromptTemplate
+                        from langchain_core.output_parsers import StrOutputParser
+                        
+                        guard_prompt = ChatPromptTemplate.from_messages([
+                            ("system", """You are an expert HR Scope Classifier for Zyro Dynamics.
 Your job is to classify if a user's question is IN_SCOPE or OUT_OF_SCOPE.
 
 Output ONLY 'IN_SCOPE' or 'OUT_OF_SCOPE'.
@@ -529,16 +564,16 @@ Output ONLY 'IN_SCOPE' or 'OUT_OF_SCOPE'.
 Question: {question}
 
 Classification:"""),
-                    ])
-                    classifier = guard_prompt | llm | StrOutputParser()
-                    classification = classifier.invoke({"question": user_query}).strip().upper()
-                    
-                    if "OUT_OF_SCOPE" in classification:
-                        answer = "I am sorry, but I can only answer questions related to Zyro Dynamics (Acrux Dynamics) internal HR policies, handbook, leave policies, and work-from-home guidelines. The requested information is outside the scope of my knowledge base."
-                        source_docs = []
-                    else:
-                        rag_prompt = ChatPromptTemplate.from_messages([
-                            ("system", """You are a precise text extraction assistant.
+                        ])
+                        classifier = guard_prompt | llm | StrOutputParser()
+                        classification = classifier.invoke({"question": user_query}).strip().upper()
+                        
+                        if "OUT_OF_SCOPE" in classification:
+                            answer = "I am sorry, but I can only answer questions related to Zyro Dynamics (Acrux Dynamics) internal HR policies, handbook, leave policies, and work-from-home guidelines. The requested information is outside the scope of my knowledge base."
+                            source_docs = []
+                        else:
+                            rag_prompt = ChatPromptTemplate.from_messages([
+                                ("system", """You are a precise text extraction assistant.
 Your sole task is to extract the exact sentences or paragraphs from the retrieved context below that directly answer the user's question.
 Rules:
 1. Do NOT add any introductory phrases.
@@ -548,12 +583,12 @@ Rules:
 
 Context:
 {context}"""),
-                            ("human", "{question}")
-                        ])
-                        chain = rag_prompt | llm | StrOutputParser()
-                        answer = chain.invoke({"context": context, "question": user_query}).strip()
-                except Exception as e:
-                    answer = f"Error connecting to LLM: {str(e)}"
+                                ("human", "{question}")
+                            ])
+                            chain = rag_prompt | llm | StrOutputParser()
+                            answer = chain.invoke({"context": context, "question": user_query}).strip()
+                    except Exception as e:
+                        answer = f"Error connecting to LLM: {str(e)}"
                     
             # 3. Fallback response for new questions if offline
             if not answer:
@@ -721,7 +756,7 @@ with tabs[3]:
             - **Eligibility:** Permanent employees L3 and above with min 6 months service and rating >= Meets Expectations.
             - **Arrangements:**
               - **Hybrid WFH:** Up to 3 days/week for L3+.
-              - **Full Remote:** 5 days/week for L5+, case-by-case with internet reimbursement of Rs.1,000/month.
+              - **Full Remote:** 5 days/week for L5+, case-by-case with internet reimbursement of Rs.1,00,000/month.
               - **Ad-hoc WFH:** Up to 2 days/week for unplanned needs.
               - **Emergency WFH:** Activated as directed by HR for all employees.
             """)
